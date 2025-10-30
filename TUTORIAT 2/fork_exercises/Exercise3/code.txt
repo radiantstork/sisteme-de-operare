@@ -1,0 +1,6 @@
+if (fork())
+	if (!fork())
+		fork();
+else
+	if (fork())
+		fork(); 

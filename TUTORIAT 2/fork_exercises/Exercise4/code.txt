@@ -1,0 +1,12 @@
+if (!fork()){
+    	if (fork())
+    		if (!fork())
+    			fork();
+    } else 
+    if (fork())
+    	if (fork())
+    		if (!fork())
+    			if (!fork())
+    				fork();
+    			else
+    				fork();
