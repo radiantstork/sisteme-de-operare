@@ -48,39 +48,22 @@ int main(){
     readMatrix(matrix_in, &matrix);
     
     //Keeping track of all created threads
-    //pthread_t threads[matrix.nr_lines]
-    pthread_t* threads = malloc(sizeof(pthread_t) * (matrix.nr_lines - 1));
-    if (threads == NULL){
-        fclose(matrix_in);
-        perror("malloc");
-        return -1;
-    }
+    pthread_t threads[matrix.nr_lines - 1];
+    struct ScaleRowArgs t_args[matrix.nr_lines - 1];
 
     // Set-up threads for the rows 1 to matrix.nr_lines - 1
     for (int i = 1; i < matrix.nr_lines; ++i){
-        //Initializing arguments for scaleRow
-        //IMPORTANT: Using dynamically allocated args (WHY)? 
-        struct ScaleRowArgs* args = malloc(sizeof(struct ScaleRowArgs));
-        if (args == NULL){
-            fclose(matrix_in);
-            free(threads);
-            perror("malloc");
-            return -1;
-        }
-        
         // Set-up arguments for scaleRow
-        *args = (struct ScaleRowArgs){.arr = &matrix.mat[i][0], .size = matrix.nr_col, .scale = DEFAULT_SCALE, .row_index = i};
+        t_args[i - 1] = (struct ScaleRowArgs){.arr = &matrix.mat[i][0], .size = matrix.nr_col, .scale = DEFAULT_SCALE, .row_index = i};
 
         //Attemping to create thread to scale row i
-        if (pthread_create(&threads[i - 1], NULL, scaleRow, args)){
+        if (pthread_create(&threads[i - 1], NULL, scaleRow, &t_args[i - 1])){
             fclose(matrix_in);
-            free(threads);
             perror("pthread_create");
             return -1;
         }
     }
     
-    // Scale row 0 (why did I not allocate args dynamically?)
     struct ScaleRowArgs args = {.arr = &matrix.mat[0][0], .size = matrix.nr_col, .scale = DEFAULT_SCALE, .row_index = 0};
     scaleRow(&args);
 
@@ -88,7 +71,6 @@ int main(){
     for (int i = 0; i < matrix.nr_lines - 1; ++i)
         if (pthread_join(threads[i], NULL)){
             fclose(matrix_in);
-            free(threads);
             perror("pthread_join");
             return -1;
         }
@@ -97,7 +79,6 @@ int main(){
     FILE* matrix_out = fopen("matrix.out", "w");
     if (matrix_out == NULL){
         fclose(matrix_in);
-        free(threads);
         perror("fopen");
         return -1;
     }
@@ -106,7 +87,6 @@ int main(){
     printMatrix(matrix_out, &matrix);
 
     //Freeing resources
-    free(threads);
     fclose(matrix_in), fclose(matrix_out);
 }
 
